@@ -1,2 +1,2 @@
 # Coursera
-Codes in Using Databases with Python, Coursera
+Codes in 'Using Databases with Python', Coursera
