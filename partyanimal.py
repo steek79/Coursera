@@ -1,19 +1,22 @@
 class PartyAnimal:
     x = 0
+    name = ''
 
-    def __init__(self): # creation (which is common, used to set up variables)
-        print 'I am constructed'
+    # creation (which is common, used to set up variables)
+    def __init__(self, nam): # Counstructors can have additional parameters
+        self.name = nam
+        print self.name, 'constructed'
 
     def party(self):
         self.x = self.x + 1
-        print 'So far', self.x
-
-    def __del__(self): # destruction (which is rare)
-        print 'I am destructed', self.x
+        print self.name, 'party count', self.x
 
 
-an = PartyAnimal()
+s = PartyAnimal('Sally')
+s.party()
 
-an.party()
-an.party()
-an.party()
+j = PartyAnimal('jim')
+j.party()
+s.party()
+
+# s and j are independent instances
