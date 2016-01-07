@@ -9,6 +9,7 @@ conn = sqlite3.connect('trackdb.sqlite')
 cur = conn.cursor()
 
 # Make some fresh tables using executescript()
+# 初期化後4つのテーブルを作る
 cur.executescript('''
 DROP TABLE IF EXISTS Artist;
 DROP TABLE IF EXISTS Genre;
@@ -49,17 +50,19 @@ if ( len(fname) < 1 ) : fname = 'Library.xml'
 # <key>Name</key><string>Another One Bites The Dust</string>
 # <key>Artist</key><string>Queen</string>
 # <key>Genre</key><string>Rock</string>
+
+# d の <key> が key のところの内容を返す
 def lookup(d, key):
     found = False
     for child in d:
         if found: return child.text
-        if child.tag == 'key' and child.text == key:
+        if child.tag == 'key' and child.text == key: # <key> の中身が key(<-変数) なら
             found = True
     return None
 
 
 stuff = ET.parse(fname)
-all = stuff.findall('dict/dict/dict')
+all = stuff.findall('dict/dict/dict') # 3つ目の階層なので
 print 'Dict count: ', len(all)
 for entry in all:
     if ( lookup(entry, 'Track ID') is None ) : continue
@@ -67,23 +70,24 @@ for entry in all:
     name = lookup(entry, 'Name')
     artist = lookup(entry, 'Artist')
     album = lookup(entry, 'Album')
-    genre = lookup(entry, 'Genre')
+    genre = lookup(entry, 'Genre') # 上の関数をつかってそれぞれ入れる
 
     if name is None or artist is None or album is None or genre is None:
-        continue
+        continue # 揃ってなければ無視
 
     print name, artist, album, genre
+    # 得た4つの変数をテーブルにinsert
 
-
+    # 参照先から追加してく感じ
     cur.execute(''' INSERT OR IGNORE INTO Artist (name)
-        VALUES ( ? )''', (artist, ) )
-    cur.execute('SELECT id FROM Artist WHERE name = ? ', (artist, ))
-    artist_id = cur.fetchone()[0]
+        VALUES ( ? )''', (artist, ) ) # artist の名前がなければ追加、あれば何もなし
+    cur.execute('SELECT id FROM Artist WHERE name = ? ', (artist, )) # その artist にふられた id を選択
+    artist_id = cur.fetchone()[0] # artist_id としてとっておく
 
     cur.execute('''INSERT OR IGNORE INTO Album (title, artist_id)
-        VALUES ( ?, ? )''', ( album, artist_id ) )
-    cur.execute('SELECT id FROM Album WHERE title = ? ', (album, ))
-    album_id = cur.fetchone()[0]
+        VALUES ( ?, ? )''', ( album, artist_id ) ) # アルバムタイトル／アーティスト
+    cur.execute('SELECT id FROM Album WHERE title = ? ', (album, )) # アルバムにふられた id 選択
+    album_id = cur.fetchone()[0] # album_id としてとっておく
 
     cur.execute('''INSERT OR IGNORE INTO Genre (name)
         VALUES ( ? )''', (genre, ) )
@@ -92,16 +96,7 @@ for entry in all:
 
     cur.execute('''INSERT  OR REPLACE INTO Track
         (title, album_id, genre_id)
-        VALUES (?, ?, ?)''',
+        VALUES (?, ?, ?)''', # なければ追加、あれば更新
         ( name, album_id, genre_id ) )
 
     conn.commit()
-
-
-cur.execute('''
-SELECT Track.title, Artist.name, Album.title, Genre.name
-    FROM Track JOIN Genre JOIN Album JOIN Artist
-    ON Track.genre_id = Genre.ID and Track.album_id = Album.id
-        AND Album.artist_id = Artist.id
-    ORDER BY Artist.name LIMIT 3
-''')
